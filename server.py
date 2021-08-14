@@ -11,6 +11,7 @@ from flask import request
 from flask import send_from_directory
 
 import json
+import shutil
 from datetime import datetime
 import mimetypes
 import warnings
@@ -88,6 +89,7 @@ def detect_headpose():
                 curr_num_imgs = len(frames['F'])
                 cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), frame)
         else:
+            shutil.rmtree('runs/detect')
             break
 
     # for label_path in label_paths:

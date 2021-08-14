@@ -5,6 +5,9 @@ FROM nvcr.io/nvidia/pytorch:21.05-py3
 ADD . /workspace
 WORKDIR /workspace
 
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install ffmpeg libsm6 libxext6  -y
+
 # Install python dependencies
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
