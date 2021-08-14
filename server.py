@@ -59,7 +59,7 @@ def detect_headpose():
 
     raw_sequence = []
     label_map = ['F', 'R', 'L', 'U', 'D']
-    label_paths = glob2.glob('runs/detect/exp/labels')
+    label_paths = glob2.glob('runs/detect/exp/labels/*txt')
     frame_ids = [int(path.split('/')[-1].split('_')[-1].split('.')[0]) for path in label_paths]
     count = 0
     frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
