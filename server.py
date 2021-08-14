@@ -56,6 +56,9 @@ def detect_headpose():
     except:
         return {"error": "cannot read video"}
     
+    if os.path.isdir('runs/detect'):
+        shutil.rmtree('runs/detect')
+        
     os.system(f'python detect.py --weights headpose.pt --source {file_path} --save-txt --save-conf')
 
     raw_sequence = []
@@ -86,10 +89,9 @@ def detect_headpose():
                 case = case_map[detected_pose]
                 if not os.path.isdir(join(file_id, case)):
                     os.makedirs(join(file_id, case))
-                curr_num_imgs = len(frames['F'])
+                curr_num_imgs = len(frames[detected_pose])
                 cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), frame)
         else:
-            shutil.rmtree('runs/detect')
             break
 
     # for label_path in label_paths:
