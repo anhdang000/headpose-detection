@@ -82,14 +82,14 @@ def detect_headpose():
                 frames['F'].append(frame)
                 if not os.path.isdir(join(file_id, 'front')):
                     os.makedirs(join(file_id, 'front'))
-                curr_num_imgs = len(frames['F'])
+                curr_num_imgs = len(frames['F']) - 1
                 cv2.imwrite(join(file_id, 'front', f'{curr_num_imgs}.jpg'), frame)
             else:
                 frames[detected_pose].append(frame)
                 case = case_map[detected_pose]
                 if not os.path.isdir(join(file_id, case)):
                     os.makedirs(join(file_id, case))
-                curr_num_imgs = len(frames[detected_pose])
+                curr_num_imgs = len(frames[detected_pose]) - 1
                 cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), frame)
         else:
             break
