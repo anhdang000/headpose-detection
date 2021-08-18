@@ -68,7 +68,7 @@ def detect_headpose():
         return {"error": "cannot read video"}
 
     raw_sequence = []
-    label_map = ['F', 'R', 'L', 'U', 'D']\
+    label_map = ['F', 'R', 'L', 'U', 'D']
     count = 0
     frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
     case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
