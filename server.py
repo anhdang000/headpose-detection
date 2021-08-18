@@ -3,6 +3,7 @@ from os.path import join
 from utils_funcs import calc_score, filter_records
 import glob2
 import cv2
+import numpy as np
 
 import flask
 from flask import Flask
@@ -16,6 +17,8 @@ from datetime import datetime
 import mimetypes
 import warnings
 
+import torch
+import pandas as pd
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
@@ -26,6 +29,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.isdir(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
+# Initialize model
+model = torch.hub.load('.', 'custom', path='headpose.pt', source='local')
+
+# Requests
 @app.route('/')
 def home():
     return flask.jsonify({"server": 1})
@@ -59,30 +66,24 @@ def detect_headpose():
         os.mkdir(file_id)
     except:
         return {"error": "cannot read video"}
-    
-    if os.path.isdir('runs/detect'):
-        shutil.rmtree('runs/detect')
-        
-    os.system(f'python detect.py --weights headpose.pt --source {file_path} --save-txt --save-conf')
 
     raw_sequence = []
-    label_map = ['F', 'R', 'L', 'U', 'D']
-    label_paths = glob2.glob('runs/detect/exp/labels/*txt')
-    frame_ids = [int(path.split('/')[-1].split('_')[-1].split('.')[0]) for path in label_paths]
+    label_map = ['F', 'R', 'L', 'U', 'D']\
     count = 0
     frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
     case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
     frame = None
     diffs = []
     while True:
-        prev = frame
+        prev_frame = frame
         ret, frame = cap.read()
         count += 1
-        if ret and count in frame_ids:
-            with open(label_paths[frame_ids.index(count)], 'r') as f:
-                label = [line.strip().split(' ') for line in  f.readlines()]
-            label = sorted(label, key=lambda entry: entry[-1],  reverse=True)
-            detected_pose = label_map[int(label[0][0])]
+        if ret:
+            result = model(frame).pandas().xyxy[0].sort_values(by=['confidence'])
+            if len(result) == 0:
+                continue
+
+            detected_pose = label_map[result['class']]
             raw_sequence.append(detected_pose)
             
             if count < 3 or count > total_frames - 3:
@@ -108,7 +109,12 @@ def detect_headpose():
             break
 
     diffs = np.array(diffs)
-    if (diffs > 3).sum() > 5:
+    max_dev = 2
+    outliers = abs(diffs - diffs.mean()) >= max_dev * diffs.std()
+    print(abs(diffs - diffs.mean()))
+    print('std:', diffs.std())
+
+    if outliers.sum() > 5:
         is_cheated = True
     else:
         is_cheated = False
