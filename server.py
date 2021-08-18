@@ -26,6 +26,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.isdir(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
+@app.route('/')
+def home():
+    return flask.jsonify({"server": 1})
+
 @app.route('/headpose', methods=['POST'])
 def detect_headpose():
     sequence = request.form.get('sequence', '')
@@ -68,7 +72,10 @@ def detect_headpose():
     count = 0
     frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
     case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
+    frame = None
+    diffs = []
     while True:
+        prev = frame
         ret, frame = cap.read()
         count += 1
         if ret and count in frame_ids:
@@ -91,14 +98,20 @@ def detect_headpose():
                     os.makedirs(join(file_id, case))
                 curr_num_imgs = len(frames[detected_pose]) - 1
                 cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), frame)
+
+            if prev_frame is not None:
+                diff = cv2.absdiff(prev_frame, frame)
+                diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+                diff = cv2.GaussianBlur(diff, (5, 5), 0)
+                diffs.append(abs(diff.mean()))
         else:
             break
 
-    # for label_path in label_paths:
-    #     with open(label_path, 'r') as f:
-    #         label = [line.strip().split(' ') for line in  f.readlines()]
-    #         label = sorted(label, key=lambda entry: entry[-1],  reverse=True)
-    #         raw_sequence.append(label_map[int(label[0][0])])
+    diffs = np.array(diffs)
+    if (diffs > 3).sum() > 5:
+        is_cheated = True
+    else:
+        is_cheated = False
 
     detected_sequence = filter_records(raw_sequence, patience=2)
     score = calc_score(detected_sequence, sequence)
@@ -108,6 +121,7 @@ def detect_headpose():
         message = "fail"
     response = {
         "message": message,
+        "is_cheated": is_cheated,
         "score": score,
         "detected_sequence": '-'.join(detected_sequence),
         "raw_sequence": '-'.join(raw_sequence),
