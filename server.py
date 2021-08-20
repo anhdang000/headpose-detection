@@ -19,6 +19,8 @@ import warnings
 
 import torch
 import pandas as pd
+import face_alignment
+
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
