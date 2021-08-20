@@ -21,6 +21,25 @@ def filter_records(record, patience=2):
     result = [x for x in result if x != 'F']
     return result
 
+def calc_distance(p1, p2):
+    return np.sqrt((p2 - p1)[0]**2 + (p2 - p1)[1]**2)
+
+def compute_EAR(points):
+    # Left eye
+    A1 = calc_distance(points[37], points[41])
+    A2 = calc_distance(points[38], points[40])
+    B = calc_distance(points[36], points[39])
+    left_EAR = (A1 + A2) / (2*B)
+
+    # Light eye
+    A1 = calc_distance(points[43], points[47])
+    A2 = calc_distance(points[44], points[46])
+    B = calc_distance(points[42], points[45])
+    right_EAR = (A1 + A2) / (2*B)
+
+    return (left_EAR, right_EAR) / 2
+
+
 if __name__ == "__main__":
     record = ['F', 'F', 'R', 'R', 'R', 'R', 'L', 'L', 'L', 'F', 'L', 'L', 'L', 'U', 'D', 'D']
     print(filter_records(record))

@@ -31,3 +31,5 @@ pandas
 thop  # FLOPs computation
 
 flask
+face-alignment
+requests

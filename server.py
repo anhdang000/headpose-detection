@@ -29,8 +29,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.isdir(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# Initialize model
+EYE_AR_THRESH = 0.3
+
+# Initialize models
 model = torch.hub.load('.', 'custom', path='headpose.pt', source='local')
+fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
 
 # Requests
 @app.route('/')
@@ -68,24 +71,32 @@ def detect_headpose():
         return {"error": "cannot read video"}
 
     raw_sequence = []
-    label_map = ['F', 'R', 'L', 'U', 'D']
+    label_map = ['F', 'R', 'L', 'U', 'D', 'S']
     count = 0
-    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
-    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
-    frame = None
-    diffs = []
+    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
+    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down', 'S': 'smile'}
     while True:
-        prev_frame = frame
         ret, frame = cap.read()
         count += 1
         if ret:
-            result = model(frame).pandas().xyxy[0].sort_values(by=['confidence'])
+            result = model(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'])
             if len(result) == 0:
                 continue
 
-            detected_pose = label_map[result['class']]
-            raw_sequence.append(detected_pose)
+            detected_pose = label_map[result['class'][0]]
+
+            # Check whether eyes are closed
+            if detected_pose == 'F':
+                preds = fa.get_landmarks(frame[:, :, ::-1])[0].astype(np.int32)
+                average_ear = compute_EAR(preds)
+                if average_ear < EYE_AR_THRESH:
+                    raw_sequence.append('E')
+                else:
+                    raw_sequence.append('F')
+            else:
+                raw_sequence.append(detected_pose)
             
+            # Append normal results and save into images 
             if count < 3 or count > total_frames - 3:
                 frames['F'].append(frame)
                 if not os.path.isdir(join(file_id, 'front')):
@@ -99,25 +110,8 @@ def detect_headpose():
                     os.makedirs(join(file_id, case))
                 curr_num_imgs = len(frames[detected_pose]) - 1
                 cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), frame)
-
-            if prev_frame is not None:
-                diff = cv2.absdiff(prev_frame, frame)
-                diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-                diff = cv2.GaussianBlur(diff, (5, 5), 0)
-                diffs.append(abs(diff.mean()))
         else:
             break
-
-    diffs = np.array(diffs)
-    max_dev = 2
-    outliers = abs(diffs - diffs.mean()) >= max_dev * diffs.std()
-    print(abs(diffs - diffs.mean()))
-    print('std:', diffs.std())
-
-    if outliers.sum() > 5:
-        is_cheated = True
-    else:
-        is_cheated = False
 
     detected_sequence = filter_records(raw_sequence, patience=2)
     score = calc_score(detected_sequence, sequence)
@@ -127,7 +121,6 @@ def detect_headpose():
         message = "fail"
     response = {
         "message": message,
-        "is_cheated": is_cheated,
         "score": score,
         "detected_sequence": '-'.join(detected_sequence),
         "raw_sequence": '-'.join(raw_sequence),

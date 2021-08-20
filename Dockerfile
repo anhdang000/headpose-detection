@@ -1,8 +1,7 @@
-# Start FROM Nvidia PyTorch image https://ngc.nvidia.com/catalog/containers/nvidia:pytorch
 FROM nvcr.io/nvidia/pytorch:21.05-py3
 
 # Copy content
-ADD . /workspace
+COPY . /workspace
 WORKDIR /workspace
 
 RUN apt-get update
