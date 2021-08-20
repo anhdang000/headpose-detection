@@ -3,7 +3,9 @@ from os.path import join
 from utils_funcs import *
 import glob2
 import cv2
+import imutils
 import numpy as np
+import requests
 
 import flask
 from flask import Flask
@@ -36,6 +38,11 @@ EYE_AR_THRESH = 0.3
 # Initialize models
 model = torch.hub.load('.', 'custom', path='headpose.pt', source='local')
 fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
+
+# For orientation request
+url = "http://192.168.1.27:8171/"
+payload = {'debug': 'True'}
+headers = {}
 
 # Requests
 @app.route('/')
@@ -81,6 +88,16 @@ def detect_headpose():
         ret, frame = cap.read()
         count += 1
         if ret:
+            # Find orientation angle
+            if count == 1:
+                cv2.imwrite('to_check.jpg', frame)
+                files = ('image',('to_check.jpg',open('to_check.jpg','rb'),'image/jpeg'))
+                response = requests.request("POST", url, headers=headers, data=payload, files=files)
+                response = json.loads(response.text)
+                angle = response['angle']
+
+            frame = imutils.rotate(frame, angle=-angle)
+
             result = model(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'])
             if len(result) == 0:
                 continue

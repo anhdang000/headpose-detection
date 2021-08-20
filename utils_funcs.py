@@ -38,7 +38,7 @@ def compute_EAR(points):
     B = calc_distance(points[42], points[45])
     right_EAR = (A1 + A2) / (2*B)
 
-    return (left_EAR, right_EAR) / 2
+    return (left_EAR + right_EAR) / 2
 
 
 if __name__ == "__main__":
