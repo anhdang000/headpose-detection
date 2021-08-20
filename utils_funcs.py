@@ -1,4 +1,5 @@
 from difflib import SequenceMatcher
+import numpy as np
 
 def calc_score(a, b):
     return SequenceMatcher(None, ''.join(a), ''.join(b)).ratio()

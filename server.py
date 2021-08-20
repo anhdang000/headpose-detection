@@ -1,6 +1,6 @@
 import os
 from os.path import join
-from utils_funcs import calc_score, filter_records
+from utils_funcs import *
 import glob2
 import cv2
 import numpy as np
