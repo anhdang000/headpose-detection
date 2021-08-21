@@ -88,18 +88,18 @@ def detect_headpose():
     # Find orientation angle
     print('Finding orientation angle')
     cap_2 = cv2.VideoCapture(file_path)
-    while True:
+    for i in range(1, total_frames, (total_frames - 1)//5):
+        cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
         ret, frame = cap_2.read()
-        if ret:
-            cv2.imwrite('to_check.jpg', frame)
-            files = [('image',('to_check.jpg', open('to_check.jpg','rb'),'image/jpeg'))]
-            response = requests.request("POST", url, headers=headers, data=payload, files=files)
-            response = json.loads(response.text)
-            angle = response['angle']
-            if angle is not None:
-                break
-        else:
+
+        cv2.imwrite('to_check.jpg', frame)
+        files = [('image',('to_check.jpg', open('to_check.jpg','rb'),'image/jpeg'))]
+        response = requests.request("POST", url, headers=headers, data=payload, files=files)
+        response = json.loads(response.text)
+        angle = response['angle']
+        if angle is not None:
             break
+            
     if angle is None:
         return {"error": "invalid orientation"}
 
