@@ -21,7 +21,7 @@ import warnings
 
 import torch
 import pandas as pd
-import face_alignment
+# import face_alignment
 
 warnings.filterwarnings("ignore")
 
@@ -37,7 +37,7 @@ EYE_AR_THRESH = 0.3
 
 # Initialize models
 model = torch.hub.load('.', 'custom', path='headpose.pt', source='local')
-fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
+# fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
 
 # For orientation request
 url = "http://192.168.1.27:8171/"
@@ -80,22 +80,35 @@ def detect_headpose():
         return {"error": "cannot read video"}
 
     raw_sequence = []
-    label_map = ['F', 'R', 'L', 'U', 'D', 'S']
+    label_map = ['F', 'R', 'L', 'U', 'D']
     count = 0
-    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
-    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down', 'S': 'smile'}
+    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
+    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
+
+    # Find orientation angle
+    print('Finding orientation angle')
+    cap_2 = cv2.VideoCapture(file_path)
+    while True:
+        ret, frame = cap_2.read()
+        if ret:
+            cv2.imwrite('to_check.jpg', frame)
+            files = [('image',('to_check.jpg', open('to_check.jpg','rb'),'image/jpeg'))]
+            response = requests.request("POST", url, headers=headers, data=payload, files=files)
+            response = json.loads(response.text)
+            angle = response['angle']
+            if angle is not None:
+                break
+        else:
+            break
+    if angle is None:
+        return {"error": "invalid orientation"}
+
+
+    print('Predicting frame by frame')
     while True:
         ret, frame = cap.read()
         count += 1
         if ret:
-            # Find orientation angle
-            if count == 1:
-                cv2.imwrite('to_check.jpg', frame)
-                files = ('image',('to_check.jpg',open('to_check.jpg','rb'),'image/jpeg'))
-                response = requests.request("POST", url, headers=headers, data=payload, files=files)
-                response = json.loads(response.text)
-                angle = response['angle']
-
             frame = imutils.rotate(frame, angle=-angle)
 
             result = model(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'])
@@ -104,16 +117,16 @@ def detect_headpose():
 
             detected_pose = label_map[result['class'][0]]
 
-            # Check whether eyes are closed
-            if detected_pose == 'F':
-                preds = fa.get_landmarks(frame[:, :, ::-1])[0].astype(np.int32)
-                average_ear = compute_EAR(preds)
-                if average_ear < EYE_AR_THRESH:
-                    raw_sequence.append('E')
-                else:
-                    raw_sequence.append('F')
-            else:
-                raw_sequence.append(detected_pose)
+            # # Check whether eyes are closed
+            # if detected_pose == 'F':
+            #     preds = fa.get_landmarks(frame[:, :, ::-1])[0].astype(np.int32)
+            #     average_ear = compute_EAR(preds)
+            #     if average_ear < EYE_AR_THRESH:
+            #         raw_sequence.append('E')
+            #     else:
+            #         raw_sequence.append('F')
+            # else:
+            raw_sequence.append(detected_pose)
             
             # Append normal results and save into images 
             if count < 3 or count > total_frames - 3:

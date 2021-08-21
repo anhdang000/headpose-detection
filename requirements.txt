@@ -33,3 +33,4 @@ thop  # FLOPs computation
 flask
 face-alignment
 requests
+imutils
