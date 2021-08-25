@@ -8,6 +8,7 @@ import numpy as np
 import requests
 
 import flask
+from flask_cors import CORS, cross_origin
 from flask import Flask
 from flask import Response
 from flask import request
@@ -26,6 +27,7 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
+cors = CORS(app)
 
 UPLOAD_FOLDER = 'static/upload'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -37,7 +39,7 @@ EYE_AR_THRESH = 0.3
 
 # Initialize models
 model = torch.hub.load('.', 'custom', path='headpose.pt', source='local')
-# fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
+model_smile = torch.hub.load('.', 'custom', path='smile_facebox.pt', source='local')
 
 # For orientation request
 url = "http://192.168.1.27:8171/"
@@ -46,10 +48,12 @@ headers = {}
 
 # Requests
 @app.route('/')
+@cross_origin()
 def home():
     return flask.jsonify({"server": 1})
 
 @app.route('/headpose', methods=['POST'])
+@cross_origin()
 def detect_headpose():
     sequence = request.form.get('sequence', '')
     video = request.files.get("video")
@@ -80,10 +84,10 @@ def detect_headpose():
         return {"error": "cannot read video"}
 
     raw_sequence = []
-    label_map = ['F', 'R', 'L', 'U', 'D']
+    label_map = ['F', 'R', 'L', 'U', 'D', 'S']
     count = 0
-    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': []}
-    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down'}
+    frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
+    case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down', 'S': 'smile'}
 
     # Find orientation angle
     print('Finding orientation angle')
@@ -91,8 +95,11 @@ def detect_headpose():
     for i in range(1, total_frames, (total_frames - 1)//5):
         cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
         ret, frame = cap_2.read()
-
-        cv2.imwrite('to_check.jpg', frame)
+        try:
+            cv2.imwrite('to_check.jpg', frame)
+        except:
+            angle = None
+            continue
         files = [('image',('to_check.jpg', open('to_check.jpg','rb'),'image/jpeg'))]
         response = requests.request("POST", url, headers=headers, data=payload, files=files)
         response = json.loads(response.text)
@@ -101,7 +108,7 @@ def detect_headpose():
             break
             
     if angle is None:
-        return {"error": "invalid orientation"}
+        return {"error_code": 2, "error": "invalid orientation"}
 
 
     print('Predicting frame by frame')
@@ -117,17 +124,13 @@ def detect_headpose():
 
             detected_pose = label_map[result['class'][0]]
 
-            # # Check whether eyes are closed
-            # if detected_pose == 'F':
-            #     preds = fa.get_landmarks(frame[:, :, ::-1])[0].astype(np.int32)
-            #     average_ear = compute_EAR(preds)
-            #     if average_ear < EYE_AR_THRESH:
-            #         raw_sequence.append('E')
-            #     else:
-            #         raw_sequence.append('F')
-            # else:
+            # Run smile detection model
+            if detected_pose == 'F':
+                smile_result = model_smile(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'])
+                if len(smile_result) > 0:
+                    detected_pose = 'S'
             raw_sequence.append(detected_pose)
-            
+
             # Append normal results and save into images 
             if count < 3 or count > total_frames - 3:
                 frames['F'].append(frame)
@@ -162,12 +165,14 @@ def detect_headpose():
             'right': len(frames['R']), 
             'left': len(frames['L']),
             'up': len(frames['U']),
-            'down': len(frames['D'])
+            'down': len(frames['D']),
+            'smile': len(frames['S'])
             }
     }
     return Response(json.dumps(response),  mimetype='application/json')
 
 @app.route('/get-image', methods=['GET'])
+@cross_origin()
 def get_image():
     folder = request.args.get('folder')
     case = request.args.get('case')

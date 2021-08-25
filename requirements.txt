@@ -31,6 +31,7 @@ pandas
 thop  # FLOPs computation
 
 flask
+flask-cors
 face-alignment
 requests
 imutils
