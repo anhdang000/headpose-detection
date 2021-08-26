@@ -64,8 +64,11 @@ def detect_headpose():
         return {"error": "invalid sequence"}
     
     # Save file
-    if video.filename.strip() == '':
+    if video is None:
         return {"error": "file is not selected"}
+    elif video.filename.strip() == '':
+        return {"error": "file is not selected"}
+        
     file_id = '_'.join(str(datetime.now()).split())
     ext = video.filename.split('.')[-1]
     file_path = join(app.config['UPLOAD_FOLDER'], file_id + '.' + ext)
