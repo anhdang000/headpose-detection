@@ -60,7 +60,7 @@ def detect_headpose():
 
     # Process sequence
     sequence = list(sequence.upper())
-    if not all([s in ['L', 'R', 'U', 'D'] for s in sequence]):
+    if not all([s in ['L', 'R', 'U', 'D', 'S'] for s in sequence]):
         return {"error": "invalid sequence"}
     
     # Save file
