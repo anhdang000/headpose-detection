@@ -55,9 +55,9 @@ def home():
 @app.route('/headpose', methods=['POST'])
 @cross_origin()
 def detect_headpose():
-    sequence = request.form.get('sequence', '')
+    sequence = request.form.get("sequence", '')
     video = request.files.get("video")
-    unique_id = request.files.get("unique_id")
+    unique_id = request.form.get("unique_id", '')
 
     # Process sequence
     sequence = list(sequence.upper())
