@@ -57,6 +57,7 @@ def home():
 def detect_headpose():
     sequence = request.form.get('sequence', '')
     video = request.files.get("video")
+    unique_id = request.files.get("unique_id")
 
     # Process sequence
     sequence = list(sequence.upper())
@@ -69,7 +70,7 @@ def detect_headpose():
     elif video.filename.strip() == '':
         return {"error": "file is not selected"}
         
-    file_id = '_'.join(str(datetime.now()).split())
+    file_id = unique_id + '_' + '_'.join(str(datetime.now()).split())
     ext = video.filename.split('.')[-1]
     file_path = join(app.config['UPLOAD_FOLDER'], file_id + '.' + ext)
     video.save(file_path)
@@ -121,7 +122,7 @@ def detect_headpose():
         if ret:
             frame = imutils.rotate(frame, angle=-angle)
 
-            result = model(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'])
+            result = model(frame[:, :, ::-1]).pandas().xyxy[0].sort_values(by=['confidence'], ascending=False)
             if len(result) == 0:
                 continue
 
