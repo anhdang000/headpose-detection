@@ -12,7 +12,7 @@ from flask_cors import CORS, cross_origin
 from flask import Flask
 from flask import Response
 from flask import request
-from flask import send_from_directory
+from flask import send_file, send_from_directory
 
 import json
 import shutil
@@ -195,3 +195,9 @@ def get_image():
             as_attachment=True
             )
     
+@app.route('/get-video', methods=['GET'])
+@cross_origin()
+def get_video():
+    file_id = request.args.get('file_id')
+    file_path = glob2.glob(join(app.config['UPLOAD_FOLDER'], file_id + '*'))[0]
+    return send_file(file_path)
