@@ -100,7 +100,11 @@ def detect_headpose():
     # Find orientation angle
     print('Finding orientation angle')
     cap_2 = cv2.VideoCapture(file_path)
-    for i in range(1, total_frames, (total_frames - 1)//5):
+    if total_frames > 0:
+        frame_indices = range(1, total_frames, (total_frames - 1)//5)
+    else:
+        frame_indices = range(1, 6)
+    for i in frame_indices:
         cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
         ret, frame = cap_2.read()
         try:
