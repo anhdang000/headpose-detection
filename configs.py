@@ -1,3 +1,4 @@
+import sys
 import torch
 import logging
 import warnings
@@ -9,6 +10,7 @@ warnings.filterwarnings("ignore")
 logging.basicConfig(
     level=logging.INFO, 
     filename='runtime.log', 
+    stream = sys.stdout,
     filemode='w', format = (
         '%(levelname)s:\t'
         '%(filename)s:'
