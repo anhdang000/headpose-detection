@@ -47,10 +47,13 @@ def detect_headpose():
     images = request.files.getlist("images")
     unique_id = request.form.get("unique_id", '')
 
+    # Remove invalid image(s)
+    images = [image for image in images if image.filename != '']
+
     # Find source
-    if video is not None and len(images) > 0:
+    if video is not None and video.filename != '' and len(images) > 0:
         return {"code": 4, "message": "too many sources"}
-    elif video is not None:
+    elif video is not None and video.filename != '':
         source = 'video'
     elif len(images) > 0:
         source = 'images'
@@ -74,9 +77,6 @@ def detect_headpose():
     ### Video
     ###########################################################################
     elif source == 'video':
-        if video.filename == '':
-            return {"code": 7, "message": "video is not selected"}
-            
         ext = video.filename.split('.')[-1]
         file_path = join(app.config['UPLOAD_FOLDER'], file_id + '.' + ext)
         video.save(file_path)
@@ -186,11 +186,6 @@ def detect_headpose():
     ### Images
     ###########################################################################
     elif source == 'images':
-        # Remove invalid image(s)
-        images = [image for image in images if image.filename != '']
-        if len(images) == 0:
-            return {"code": 6, "message": "images are not selected"}
-
         folder_path = join(app.config['UPLOAD_FOLDER'], file_id)
         os.mkdir(folder_path)
         imgs = []
