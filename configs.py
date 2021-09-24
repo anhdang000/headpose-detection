@@ -1,24 +1,9 @@
 import sys
 import torch
-import logging
 import warnings
 
 # Warning 
 warnings.filterwarnings("ignore")
-
-# Config logger
-logging.basicConfig(
-    level=logging.INFO, 
-    filename='runtime.log', 
-    stream = sys.stdout,
-    filemode='w', format = (
-        '%(levelname)s:\t'
-        '%(filename)s:'
-        '%(funcName)s():'
-        '%(lineno)d\t'
-        '%(message)s'
-        )
-    )
 
 # Config orientation request
 url = "http://192.168.1.27:8171/single_image"

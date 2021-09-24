@@ -93,15 +93,15 @@ def detect_headpose():
             return {"error": "cannot read video"}
 
         # Find orientation angle
-        logging.info('Finding orientation angle')
-        logging.info(f'Video length {total_frames}')
+        print('Finding orientation angle')
+        print(f'Video length {total_frames}')
         cap_2 = cv2.VideoCapture(file_path)
         if total_frames > 0:
             frame_indices = range(1, total_frames, (total_frames - 1)//5)
         else:
             frame_indices = range(1, 6)
         for i in frame_indices:
-            logging.info(f'Processing frame {i}')
+            print(f'Processing frame {i}')
             cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret, frame = cap_2.read()
             try:
@@ -119,7 +119,7 @@ def detect_headpose():
         if angle is None:
             return {"error_code": 2, "error": "invalid orientation"}
 
-        logging.info('Predicting frame by frame')
+        print('Predicting frame by frame')
 
         raw_sequence = []
         count = 0
@@ -197,7 +197,7 @@ def detect_headpose():
             img = img[:, :, ::-1]
             imgs.append(img)
 
-            logging.info('Finding orientation angle')
+            print('Finding orientation angle')
             files = [('image',(image_path, open(image_path,'rb'),'image/jpeg'))]
             response = requests.request("POST", url, headers=headers, data=payload, files=files)
             response = json.loads(response.text)
@@ -209,7 +209,7 @@ def detect_headpose():
             return {"error_code": 2, "error": "invalid orientation"}
 
         raw_sequence = []
-        logging.info('Predicting frame by frame')
+        print('Predicting frame by frame')
         for i in range(len(images)):
             img = imutils.rotate(imgs[i], angle=-angle)
 
