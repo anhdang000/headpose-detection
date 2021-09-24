@@ -93,15 +93,15 @@ def detect_headpose():
             return {"error": "cannot read video"}
 
         # Find orientation angle
-        logging.info('Finding orientation angle')
         logging.info(f'Video length {total_frames}')
         cap_2 = cv2.VideoCapture(file_path)
         if total_frames > 0:
             frame_indices = range(1, total_frames, (total_frames - 1)//5)
         else:
             frame_indices = range(1, 6)
+
+        logging.info('Finding orientation angle')
         for i in frame_indices:
-            logging.info(f'Processing frame {i}')
             cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret, frame = cap_2.read()
             try:
@@ -115,7 +115,8 @@ def detect_headpose():
             angle = response['angle']
             if angle is not None:
                 break
-                
+        
+        logging.info(f'Orientation: {angle}')
         if angle is None:
             return {"error_code": 2, "error": "invalid orientation"}
 
@@ -193,8 +194,12 @@ def detect_headpose():
         for i in range(len(images)):
             image_path = join(folder_path, images[i].filename)
             images[i].save(image_path)
-            img = cv2.imread(image_path)
-            img = img[:, :, ::-1]
+            try:
+                img = cv2.imread(image_path)
+                img = img[:, :, ::-1]
+            except:
+                logging.warning(f'Invalid file: {images[i].filename}')
+                continue
             imgs.append(img)
 
             files = [('image',(image_path, open(image_path,'rb'),'image/jpeg'))]
@@ -205,7 +210,9 @@ def detect_headpose():
                 angle = result_angle
 
         logging.info(f'Orientation: {angle}')
-        if angle is None:
+        if len(imgs) == 0:
+            return {"code": 6, "message": "invalid image"}
+        elif angle is None:
             return {"error_code": 2, "error": "invalid orientation"}
 
         raw_sequence = []
