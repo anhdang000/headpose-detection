@@ -73,8 +73,10 @@ def detect_headpose():
     ########################################################################### 
     ### Video
     ###########################################################################
-
     elif source == 'video':
+        if video.filename == '':
+            return {"code": 7, "message": "video is not selected"}
+            
         ext = video.filename.split('.')[-1]
         file_path = join(app.config['UPLOAD_FOLDER'], file_id + '.' + ext)
         video.save(file_path)
