@@ -238,7 +238,7 @@ def detect_headpose():
             if not os.path.isdir(join(file_id, case)):
                 os.makedirs(join(file_id, case))
             curr_num_imgs = len(frames[detected_pose]) - 1
-            cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), img)
+            cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), img[:, :, ::-1])
 
         detected_sequence = filter_records(raw_sequence, patience=1)
         score = calc_score(detected_sequence, sequence)
