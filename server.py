@@ -93,15 +93,15 @@ def detect_headpose():
             return {"error": "cannot read video"}
 
         # Find orientation angle
-        print('Finding orientation angle')
-        print(f'Video length {total_frames}')
+        logging.info('Finding orientation angle')
+        logging.info(f'Video length {total_frames}')
         cap_2 = cv2.VideoCapture(file_path)
         if total_frames > 0:
             frame_indices = range(1, total_frames, (total_frames - 1)//5)
         else:
             frame_indices = range(1, 6)
         for i in frame_indices:
-            print(f'Processing frame {i}')
+            logging.info(f'Processing frame {i}')
             cap_2.set(cv2.CAP_PROP_POS_FRAMES, i)
             ret, frame = cap_2.read()
             try:
@@ -118,8 +118,6 @@ def detect_headpose():
                 
         if angle is None:
             return {"error_code": 2, "error": "invalid orientation"}
-
-        print('Predicting frame by frame')
 
         raw_sequence = []
         count = 0
@@ -180,6 +178,7 @@ def detect_headpose():
                 'smile': len(frames['S'])
                 }
         }
+        logging.info(f'Detected sequence: {detected_sequence}\tScore: {score}')
         return Response(json.dumps(response),  mimetype='application/json')
 
     ########################################################################### 
@@ -190,6 +189,7 @@ def detect_headpose():
         os.mkdir(folder_path)
         imgs = []
         angle = None
+        logging.info('Finding orientation angle')
         for i in range(len(images)):
             image_path = join(folder_path, images[i].filename)
             images[i].save(image_path)
@@ -197,7 +197,6 @@ def detect_headpose():
             img = img[:, :, ::-1]
             imgs.append(img)
 
-            print('Finding orientation angle')
             files = [('image',(image_path, open(image_path,'rb'),'image/jpeg'))]
             response = requests.request("POST", url, headers=headers, data=payload, files=files)
             response = json.loads(response.text)
@@ -205,11 +204,11 @@ def detect_headpose():
             if result_angle is not None:
                 angle = result_angle
 
+        logging.info(f'Orientation: {angle}')
         if angle is None:
             return {"error_code": 2, "error": "invalid orientation"}
 
         raw_sequence = []
-        print('Predicting frame by frame')
         for i in range(len(images)):
             img = imutils.rotate(imgs[i], angle=-angle)
 
@@ -255,6 +254,7 @@ def detect_headpose():
                 'smile': len(frames['S'])
                 }
         }
+        logging.info(f'Detected sequence: {detected_sequence}\tScore: {score}')
         return Response(json.dumps(response),  mimetype='application/json')
 
 @app.route('/get-image', methods=['GET'])
