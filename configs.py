@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore")
 
 # Config logger
 logging.basicConfig(
-    level=logging.DEBUG, 
+    level=logging.INFO, 
     filename='runtime.log', 
     filemode='w', format = (
         '%(levelname)s:\t'

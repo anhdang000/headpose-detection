@@ -184,9 +184,13 @@ def detect_headpose():
     ### Images
     ###########################################################################
     elif source == 'images':
+        # Remove invalid image(s)
+        images = [image for image in images if image.filename != '']
+        if len(images) == 0:
+            return {"code": 6, "message": "images are not selected"}
+
         folder_path = join(app.config['UPLOAD_FOLDER'], file_id)
         os.mkdir(folder_path)
-
         imgs = []
         angle = None
         for i in range(len(images)):
