@@ -233,7 +233,7 @@ def detect_headpose():
             curr_num_imgs = len(frames[detected_pose]) - 1
             cv2.imwrite(join(file_id, case, f'{curr_num_imgs}.jpg'), img)
 
-        detected_sequence = filter_records(raw_sequence, patience=2)
+        detected_sequence = filter_records(raw_sequence, patience=1)
         score = calc_score(detected_sequence, sequence)
         if detected_sequence == sequence:
             message = "success"
