@@ -24,7 +24,6 @@ payload = {'debug': 'False'}
 headers = {}
 
 label_map = ['F', 'R', 'L', 'U', 'D', 'S']
-frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
 case_map = {'F': 'front', 'L': 'left', 'R': 'right', 'U': 'up', 'D': 'down', 'S': 'smile'}
 
 # Initialize models

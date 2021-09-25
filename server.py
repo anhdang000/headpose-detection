@@ -121,6 +121,7 @@ def detect_headpose():
             return {"error_code": 2, "error": "invalid orientation"}
 
         raw_sequence = []
+        frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
         count = 0
         while True:
             ret, frame = cap.read()
@@ -216,6 +217,7 @@ def detect_headpose():
             return {"error_code": 2, "error": "invalid orientation"}
 
         raw_sequence = []
+        frames = {'F': [], 'R': [], 'L': [], 'U': [], 'D': [], 'S': []}
         for i in range(len(images)):
             img = imutils.rotate(imgs[i], angle=-angle)
 
